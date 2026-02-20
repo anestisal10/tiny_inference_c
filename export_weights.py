@@ -5,7 +5,7 @@ import json
 
 # --- Configuration ---
 MODEL_NAME = "microsoft/DialoGPT-medium" 
-OUT_FILE   = "c:/Users/ANESTIS/Desktop/Anestis/PROJECTS/tiny_inference_c/gpt2_tiny.bin"
+OUT_FILE   = "yourpath/tiny_inference_c/gpt2_tiny.bin"
 VOCAB_FILE = "vocab.txt"
 TEXT       = "Hello world"
 
