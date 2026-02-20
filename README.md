@@ -24,6 +24,7 @@ A lightweight, dependency-free GPT-2 inference engine written in **pure C** - no
 tiny_inference_c/
 ├── engine.c            # Core inference engine (pure C)
 ├── export_weights.py   # Exports HuggingFace model weights to binary format
+├── diagnostic.py       # Step-by-step numerical debugging vs. PyTorch reference
 └── README.md
 ```
 
@@ -92,4 +93,5 @@ Inspired by [llm.c](https://github.com/karpathy/llm.c) by Andrej Karpathy.
 ## License
 
 MIT
+
 
