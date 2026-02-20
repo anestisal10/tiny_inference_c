@@ -11,7 +11,7 @@
 #define MAX_POS     1024
 #define EPS         1e-5f
 #define SEQ_LEN     64    // Max tokens to generate
-#define MAX_TOKEN_LEN 50  // Max characters per word in vocab
+#define MAX_TOKEN_LEN 256  // Max characters per word in vocab
 #define DK          (DIM / N_HEADS)
 #define DFF         (DIM * 4)
 #define MASK_VAL    -1e9f
@@ -116,7 +116,6 @@ int predict_next_token(int* input_ids, int seq_len) {
                 }
             }
         }
-        
         // Projection & Residual
         float* proj = (float*)calloc(seq_len * DIM, sizeof(float));
         matmul(x_norm, w_o_all + l*DIM*DIM, b_o_all + l*DIM, proj, seq_len, DIM, DIM);
@@ -159,7 +158,7 @@ void load_vocabulary() {
     char line[MAX_TOKEN_LEN];
     int idx = 0;
     while(fgets(line, sizeof(line), f) && idx < VOCAB) {
-        line[strcspn(line, "\n")] = 0; // Strip newline
+        line[strcspn(line, "\r\n")] = 0; // Strip newline
         strcpy(vocabulary[idx], line);
         idx++;
     }
@@ -168,16 +167,17 @@ void load_vocabulary() {
 }
 
 // Naive Tokenizer: Finds exact string match in vocab
-int encode_word(char* word) {
-    // 1. Try exact match
+int encode_word(char* word, int prepend_space) {
+    if (prepend_space) {
+        char with_space[MAX_TOKEN_LEN] = " ";
+        strcat(with_space, word);
+        for(int i=0; i<VOCAB; i++) {
+            if(strcmp(with_space, vocabulary[i]) == 0) return i;
+        }
+    }
+    // Try exact match
     for(int i=0; i<VOCAB; i++) {
         if(strcmp(word, vocabulary[i]) == 0) return i;
-    }
-    // 2. Try adding a space prefix (common in GPT-2)
-    char with_space[MAX_TOKEN_LEN] = " ";
-    strcat(with_space, word);
-    for(int i=0; i<VOCAB; i++) {
-        if(strcmp(with_space, vocabulary[i]) == 0) return i;
     }
     return 50256; // <|endoftext|> or Unknown
 }
@@ -231,21 +231,22 @@ int main() {
     char buffer[256];
 
     printf("\n=== Tiny GPT-2 Inference Engine ===\n");
-    printf("Note: The model is tiny (emb=2), output will be nonsense but grammatical structure might work.\n");
 
     while(1) {
         printf("\nInput text: ");
         if (!fgets(buffer, sizeof(buffer), stdin)) break;
-        buffer[strcspn(buffer, "\n")] = 0; // Strip newline
+        buffer[strcspn(buffer, "\r\n")] = 0; // Strip newline
 
         // 1. Naive Tokenization (Split by space)
         int seq_len = 0;
+        int is_first = 1;
         char* token = strtok(buffer, " ");
         printf("Tokens: ");
         while(token != NULL && seq_len < SEQ_LEN/2) {
-            int id = encode_word(token);
+            int id = encode_word(token, !is_first);
             input_ids[seq_len++] = id;
             printf("[%s -> %d] ", token, id);
+            is_first = 0;
             token = strtok(NULL, " ");
         }
         printf("\nGenerating: ");
